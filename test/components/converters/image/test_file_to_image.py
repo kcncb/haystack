@@ -104,6 +104,23 @@ class TestImageFileToImageContent:
         assert results["image_contents"][0].detail is None
         assert results["image_contents"][0].meta["file_path"] == image_path
 
+    def test_run_with_non_image_source_in_mixed_batch(self, caplog: pytest.LogCaptureFixture) -> None:
+        converter = ImageFileToImageContent()
+        results = converter.run(sources=["./test/test_files/images/apple.jpg", "./test/test_files/txt/doc_1.txt"])
+
+        # The non-image source is skipped instead of failing the whole batch.
+        assert len(results["image_contents"]) == 1
+        assert results["image_contents"][0].mime_type == "image/jpeg"
+        assert results["image_contents"][0].meta["file_path"] == str(Path("./test/test_files/images/apple.jpg"))
+        assert "Could not convert file" in caplog.text
+
+    def test_run_with_non_image_bytestream(self, caplog: pytest.LogCaptureFixture) -> None:
+        byte_stream = ByteStream.from_string("Haystack!", mime_type="text/plain", meta={"file_path": "doc_1.txt"})
+        converter = ImageFileToImageContent()
+
+        assert converter.run(sources=[byte_stream])["image_contents"] == []
+        assert "Could not convert file" in caplog.text
+
     def test_run_with_empty_bytestream(self) -> None:
         # Create an empty ByteStream object
         byte_stream = ByteStream(data=b"", meta={"file_path": "empty_file.png"})

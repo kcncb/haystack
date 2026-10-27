@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    ``ImageFileToImageContent`` now skips a source that is not an image instead of failing the whole batch. A source
+    such as a ``.txt`` file passed together with images used to raise
+    ``ValueError: text/plain is not a valid image MIME type.`` from ``ImageContent``, because the content object was
+    built outside the ``try`` block that handles conversion failures. Such sources are now logged and skipped, and the
+    valid images in the batch are still converted.
